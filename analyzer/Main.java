@@ -1,21 +1,21 @@
 package analyzer;
 
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 public class Main {
     public static void main(String[] args) {
-        if (args.length == 3) {
-            String filePath = args[0];
-            String filePattern = args[1];
-            String resultingType = args[2];
+        if (args.length == 4) {
+            String algorithm = args[0];
+            String filePath = args[1];
+            String patternStr = args[2];
+            String resultingType = args[3];
 
-            try (InputStream inputStream = new FileInputStream(filePath)) {
-                byte[] patternByteArray = filePattern.getBytes();
-                byte[] fileByteArray = inputStream.readAllBytes();
+            try {
+                String fileStr = new String(Files.readAllBytes(Paths.get(filePath)));
 
-                if (isSubArray(patternByteArray, fileByteArray)) {
+                if (isSubstring(patternStr, fileStr, isKMP(algorithm))) {
                     System.out.println(resultingType);
                 } else {
                     System.out.println("Unknown file type");
@@ -26,21 +26,38 @@ public class Main {
         }
     }
 
-    private static boolean isSubArray(byte[] subArray, byte[] array) {
-        if (subArray == null || array == null) {
+    private static boolean isKMP(String algorithm) {
+        return algorithm.toUpperCase().contains("KMP");
+    }
+
+    // isKMP will define it we will use KMP or naive algorithms
+    private static boolean isSubstring(String pattern, String text, boolean isKMP) {
+        if (pattern == null || text == null) {
             return false;
         }
-        if (subArray.length > array.length) {
+        if (pattern.length() > text.length()) {
             return false;
         }
-        if (array.length == 0) {
+        if (text.length() == 0) {
             return true;
         }
-        for (int i = 0; i < array.length - subArray.length; i++) {
-            if (array[i] == subArray[0]) {
+        if (isKMP) {
+            return findUsingKMP(pattern, text);
+        } else {
+            return findUsingNaive(pattern, text);
+        }
+    }
+
+    private static boolean findUsingKMP(String pattern, String text) {
+        return true;
+    }
+
+    private static boolean findUsingNaive(String pattern, String text) {
+        for (int i = 0; i < text.length() - pattern.length(); i++) {
+            if (text.charAt(i) == pattern.charAt(0)) {
                 boolean isMatch = true;
-                for (byte b : subArray) {
-                    if (b != array[i]) {
+                for (char c : pattern.toCharArray()) {
+                    if (c != text.charAt(i)) {
                         isMatch = false;
                         break;
                     }
