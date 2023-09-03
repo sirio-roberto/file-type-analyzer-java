@@ -13,6 +13,8 @@ public class Main {
             String resultingType = args[3];
 
             try {
+                long startTime = System.currentTimeMillis();
+
                 String fileStr = new String(Files.readAllBytes(Paths.get(filePath)));
 
                 if (isSubstring(patternStr, fileStr, isKMP(algorithm))) {
@@ -20,6 +22,8 @@ public class Main {
                 } else {
                     System.out.println("Unknown file type");
                 }
+                long endTime = System.currentTimeMillis();
+                System.out.printf("It took %.3f seconds\n", (endTime - startTime) / 1000.0);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
