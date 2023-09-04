@@ -15,7 +15,7 @@ public class Searcher implements Callable<String> {
     }
 
     @Override
-    public String call() throws Exception {
+    public String call() {
         try {
             String fileStr = new String(Files.readAllBytes(file.toPath()));
 
@@ -40,7 +40,7 @@ public class Searcher implements Callable<String> {
         if (text.length() == 0) {
             return true;
         }
-        return findUsingKMP(pattern, text);
+        return findUsingRabinKarp(pattern, text);
     }
 
     private boolean findUsingKMP(Pattern pattern, String text) {
@@ -64,5 +64,29 @@ public class Searcher implements Callable<String> {
             }
         }
         return false;
+    }
+
+    private boolean findUsingRabinKarp(Pattern pattern, String text) {
+        String code = pattern.getCode();
+        int len = code.length();
+        long patternHash = getPolynomialHash(code);
+        for (int i = text.length() - len; i >= 0; i--) {
+            String substring = text.substring(i, i + code.length());
+            long subHash = getPolynomialHash(substring);
+            if (patternHash == subHash && code.equals(substring)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private long getPolynomialHash(String code) {
+        final int base = 256;
+        final int prime = 101;
+        long result = 0;
+        for (int i = 0; i < code.length(); i++) {
+            result += (int) code.charAt(i) * ((long) Math.pow(base, i));
+        }
+        return result % prime;
     }
 }

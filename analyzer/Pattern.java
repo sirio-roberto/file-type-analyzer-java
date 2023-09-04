@@ -13,10 +13,6 @@ public class Pattern implements Comparable<Pattern> {
         setPrefixFunction();
     }
 
-    public int getPriority() {
-        return priority;
-    }
-
     public String getCode() {
         return code;
     }
