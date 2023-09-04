@@ -6,16 +6,12 @@ import java.nio.file.Files;
 import java.util.concurrent.Callable;
 
 public class Searcher implements Callable<String> {
-    private File file;
-    private String patternStr;
-    private String resultingType;
-    private int[] prefixFunc;
+    private final File file;
+    private final Pattern[] PATTERNS;
 
-    public Searcher(File file, String patternStr, String resultingType, int[] prefixFunc) {
+    public Searcher(File file, Pattern[] patterns) {
         this.file = file;
-        this.patternStr = patternStr;
-        this.resultingType = resultingType;
-        this.prefixFunc = prefixFunc;
+        PATTERNS = patterns;
     }
 
     @Override
@@ -23,21 +19,22 @@ public class Searcher implements Callable<String> {
         try {
             String fileStr = new String(Files.readAllBytes(file.toPath()));
 
-            if (searchSubstring(patternStr, fileStr)) {
-                return file.getName() + ": " + resultingType;
-            } else {
-                return file.getName() + ": " + "Unknown file type";
+            for (Pattern p : PATTERNS) {
+                if (searchSubstring(p, fileStr)) {
+                    return file.getName() + ": " + p.getType();
+                }
             }
+            return file.getName() + ": " + "Unknown file type";
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private boolean searchSubstring(String pattern, String text) {
+    private boolean searchSubstring(Pattern pattern, String text) {
         if (pattern == null || text == null) {
             return false;
         }
-        if (pattern.length() > text.length()) {
+        if (pattern.getCode().length() > text.length()) {
             return false;
         }
         if (text.length() == 0) {
@@ -46,15 +43,17 @@ public class Searcher implements Callable<String> {
         return findUsingKMP(pattern, text);
     }
 
-    private boolean findUsingKMP(String pattern, String text) {
-        for (int i = 0; i < text.length() - pattern.length() + 1; i++) {
-            if (text.charAt(i) == pattern.charAt(0)) {
+    private boolean findUsingKMP(Pattern pattern, String text) {
+        String code = pattern.getCode();
+        int len = code.length();
+        for (int i = 0; i < text.length() - len + 1; i++) {
+            if (text.charAt(i) == code.charAt(0)) {
                 boolean isMatch = true;
                 int k = i;
-                for (int j = 0; j < pattern.length(); j++) {
-                    if (pattern.charAt(j) != text.charAt(k)) {
+                for (int j = 0; j < len; j++) {
+                    if (code.charAt(j) != text.charAt(k)) {
                         isMatch = false;
-                        i += j - 1 - prefixFunc[j - 1];
+                        i += j - 1 - pattern.getPrefixFunction()[j - 1];
                         break;
                     }
                     k++;

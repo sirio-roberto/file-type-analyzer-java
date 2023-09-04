@@ -1,8 +1,8 @@
 package analyzer;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.FileNotFoundException;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -10,17 +10,15 @@ import java.util.concurrent.Future;
 
 public class App {
     private final int N_THREADS;
+    private final Pattern[] PATTERNS;
     private final List<Future<String>> FUTURES;
-    private String folderPath;
-    private String patternStr;
-    private String resultingType;
+    private final String folderPath;
 
-    public App(String folderPath, String patternStr, String resultingType) {
+    public App(String folderPath, String patternsPath) {
         N_THREADS = Runtime.getRuntime().availableProcessors();
+        PATTERNS = getPatternsFromFile(patternsPath);
         FUTURES = new ArrayList<>();
         this.folderPath = folderPath;
-        this.patternStr = patternStr;
-        this.resultingType = resultingType;
     }
 
     public void run() {
@@ -30,13 +28,29 @@ public class App {
         File[] folderFiles = folder.listFiles();
         if (folderFiles != null) {
             for (File file : folderFiles) {
-                Searcher searcher = new Searcher(file, patternStr, resultingType, getPrefixFunction(patternStr));
+                Searcher searcher = new Searcher(file, PATTERNS);
                 FUTURES.add(executor.submit(searcher));
             }
             executor.shutdown();
         }
 
         printFutures();
+    }
+
+    private Pattern[] getPatternsFromFile(String patternsPath) {
+        Set<Pattern> patterns = new HashSet<>();
+        try (Scanner fileScan = new Scanner(new File(patternsPath))) {
+            while (fileScan.hasNextLine()) {
+                String[] fields = fileScan.nextLine().replaceAll("\"", "").split(";");
+                int priority = Integer.parseInt(fields[0]);
+                String pattern = fields[1];
+                String type = fields[2];
+                patterns.add(new Pattern(priority, pattern, type));
+            }
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        return patterns.stream().sorted().toArray(Pattern[]::new);
     }
 
     private void printFutures() {
@@ -47,20 +61,5 @@ public class App {
         } catch (ExecutionException | InterruptedException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private static int[] getPrefixFunction(String text) {
-        int[] function = new int[text.length()];
-        for (int i = 0; i < function.length; i++) {
-            int maxPrefix = 0;
-            String substring = text.substring(0, i + 1);
-            for (int j = 0; j < substring.length(); j++) {
-                if (substring.substring(0, j).equals(substring.substring(substring.length() - j))) {
-                    maxPrefix = j;
-                }
-            }
-            function[i] = maxPrefix;
-        }
-        return function;
     }
 }
